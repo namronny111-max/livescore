@@ -1,9 +1,24 @@
+export interface League {
+  id: string;
+  name: string;
+  logo: string;
+  country: string;
+  region: string;
+  description: string;
+  totalTeams: number;
+  totalPlayers: number;
+  foundedYear: number;
+  rating: number;
+  rankPosition: number;
+}
+
 export interface Team {
   id: string;
   name: string;
   logo: string;
   color: string;
   sport: string;
+  leagueId: string;
   wins: number;
   draws: number;
   losses: number;
@@ -11,6 +26,8 @@ export interface Team {
   goalsAgainst: number;
   points: number;
   roster: string[];
+  rating: number;
+  rankPosition: number;
 }
 
 export interface Player {
@@ -18,18 +35,23 @@ export interface Player {
   name: string;
   photo: string;
   team: string;
+  teamId: string;
+  leagueId: string;
   position: string;
   goals: number;
   assists: number;
   mvpVotes: number;
   isFanFavorite: boolean;
   bio: string;
+  rating: number;
+  rankPosition: number;
 }
 
 export interface Match {
   id: string;
   sport: string;
   pitch: string;
+  leagueId: string;
   homeTeam: Team;
   awayTeam: Team;
   homeScore: number;
@@ -39,6 +61,7 @@ export interface Match {
   venue: string;
   commentary: CommentaryItem[];
   fanReactions: { [key: string]: number };
+  date: string;
 }
 
 export interface CommentaryItem {
@@ -85,7 +108,20 @@ export interface Prediction {
   status: 'pending' | 'correct' | 'incorrect';
 }
 
+export interface RankingEntry {
+  id: string;
+  name: string;
+  logo: string;
+  rating: number;
+  position: number;
+  sport?: string;
+  team?: string;
+  league?: string;
+  stats: { [key: string]: any };
+}
+
 export interface AppData {
+  leagues: League[];
   matches: Match[];
   teams: Team[];
   players: Player[];

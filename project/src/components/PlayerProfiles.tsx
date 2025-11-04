@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Star, Trophy, Target, Heart, Award, TrendingUp } from 'lucide-react';
+import { Star, Trophy, Target, Heart, Award, TrendingUp, Search, Filter, X, Users } from 'lucide-react';
 import type { Player } from '../types';
 
 interface PlayerProfilesProps {
@@ -8,29 +8,49 @@ interface PlayerProfilesProps {
 
 export const PlayerProfiles: React.FC<PlayerProfilesProps> = ({ players }) => {
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'top-scorers' | 'fan-favorites'>('all');
+  const [selectedTeam, setSelectedTeam] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<'goals' | 'assists' | 'rating' | 'mvpVotes' | 'name'>('rating');
 
-  const filteredPlayers = players.filter(player => {
-    switch (filter) {
-      case 'top-scorers':
-        return player.goals >= 5;
-      case 'fan-favorites':
-        return player.isFanFavorite;
-      default:
-        return true;
-    }
-  });
+  const teams = ['all', ...Array.from(new Set(players.map(p => p.team)))];
 
-  const sortedPlayers = filteredPlayers.sort((a, b) => {
-    switch (filter) {
-      case 'top-scorers':
-        return b.goals - a.goals;
-      case 'fan-favorites':
-        return b.mvpVotes - a.mvpVotes;
-      default:
-        return b.goals - a.goals;
-    }
-  });
+  const filteredPlayers = players
+    .filter(player => {
+      const matchesSearch = player.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           player.team.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesTeam = selectedTeam === 'all' || player.team === selectedTeam;
+
+      let matchesFilter = true;
+      switch (filter) {
+        case 'top-scorers':
+          matchesFilter = player.goals >= 5;
+          break;
+        case 'fan-favorites':
+          matchesFilter = player.isFanFavorite;
+          break;
+      }
+
+      return matchesSearch && matchesTeam && matchesFilter;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'goals':
+          return b.goals - a.goals;
+        case 'assists':
+          return b.assists - a.assists;
+        case 'rating':
+          return b.rating - a.rating;
+        case 'mvpVotes':
+          return b.mvpVotes - a.mvpVotes;
+        case 'name':
+          return a.name.localeCompare(b.name);
+        default:
+          return b.rating - a.rating;
+      }
+    });
+
+  const sortedPlayers = filteredPlayers;
 
   if (selectedPlayer) {
     return (
@@ -201,8 +221,84 @@ export const PlayerProfiles: React.FC<PlayerProfilesProps> = ({ players }) => {
     <div className="p-4 space-y-6">
       {/* Header */}
       <div className="text-center py-6 bg-gradient-to-r from-green-600 to-blue-600 rounded-2xl text-white">
-        <h1 className="text-2xl font-bold mb-2">⭐ Player Profiles</h1>
+        <h1 className="text-2xl font-bold mb-2">Player Profiles</h1>
         <p className="text-green-100">Discover the stars of the tournament</p>
+        <div className="mt-3 text-sm opacity-90">{sortedPlayers.length} players</div>
+      </div>
+
+      {/* Search Bar */}
+      <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+          <input
+            type="text"
+            placeholder="Search players by name or team..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-10 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              <X size={18} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 space-y-4">
+        <div>
+          <div className="flex items-center space-x-2 mb-2">
+            <Filter size={16} className="text-gray-500" />
+            <span className="text-sm font-semibold text-gray-700">Filter by Team</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {teams.map((team) => (
+              <button
+                key={team}
+                onClick={() => setSelectedTeam(team)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  selectedTeam === team
+                    ? 'bg-blue-100 text-blue-700 border-2 border-blue-300'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border-2 border-transparent'
+                }`}
+              >
+                {team === 'all' ? 'All Teams' : team}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <div className="flex items-center space-x-2 mb-2">
+            <TrendingUp size={16} className="text-gray-500" />
+            <span className="text-sm font-semibold text-gray-700">Sort By</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { value: 'rating', label: 'Rating' },
+              { value: 'goals', label: 'Goals' },
+              { value: 'assists', label: 'Assists' },
+              { value: 'mvpVotes', label: 'MVP Votes' },
+              { value: 'name', label: 'Name' }
+            ].map(({ value, label }) => (
+              <button
+                key={value}
+                onClick={() => setSortBy(value as any)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  sortBy === value
+                    ? 'bg-green-100 text-green-700 border-2 border-green-300'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border-2 border-transparent'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Filter Tabs */}
@@ -228,8 +324,9 @@ export const PlayerProfiles: React.FC<PlayerProfilesProps> = ({ players }) => {
       </div>
 
       {/* Players Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {sortedPlayers.map((player, index) => (
+      {sortedPlayers.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {sortedPlayers.map((player, index) => (
           <div
             key={player.id}
             onClick={() => setSelectedPlayer(player)}
@@ -290,7 +387,14 @@ export const PlayerProfiles: React.FC<PlayerProfilesProps> = ({ players }) => {
             </div>
           </div>
         ))}
-      </div>
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl p-8 text-center border border-gray-200">
+          <Users size={32} className="mx-auto mb-3 text-gray-400" />
+          <h3 className="font-bold text-gray-600 mb-2">No Players Found</h3>
+          <p className="text-gray-500">Try adjusting your search or filters</p>
+        </div>
+      )}
     </div>
   );
 };

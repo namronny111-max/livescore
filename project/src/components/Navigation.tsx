@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Users, User, Trophy, Heart, Activity, MessageSquare } from 'lucide-react';
+import { Home, Users, User, Trophy, Heart, Activity, MessageSquare, Award, CheckCircle } from 'lucide-react';
 
 interface NavigationProps {
   currentPage: string;
@@ -10,6 +10,8 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPage, onPageChang
   const navItems = [
     { id: 'home', label: 'Home', icon: Home },
     { id: 'feed', label: 'Feed', icon: MessageSquare },
+    { id: 'results', label: 'Results', icon: CheckCircle },
+    { id: 'rankings', label: 'Rankings', icon: Award },
     { id: 'teams', label: 'Teams', icon: Users },
     { id: 'players', label: 'Players', icon: User },
     { id: 'table', label: 'Table', icon: Trophy },

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trophy, Target, Shield, TrendingUp, Users, Star } from 'lucide-react';
+import { Trophy, Target, Shield, TrendingUp, Users, Star, Search, Filter, X } from 'lucide-react';
 import type { Team, Match } from '../types';
 
 interface TeamProfilesProps {
@@ -9,6 +9,11 @@ interface TeamProfilesProps {
 
 export const TeamProfiles: React.FC<TeamProfilesProps> = ({ teams, matches }) => {
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedSport, setSelectedSport] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<'points' | 'rating' | 'wins' | 'name'>('points');
+
+  const sports = ['all', ...Array.from(new Set(teams.map(t => t.sport)))];
 
   const getTeamMatches = (teamId: string) => {
     return matches.filter(match => 
@@ -170,17 +175,114 @@ export const TeamProfiles: React.FC<TeamProfilesProps> = ({ teams, matches }) =>
     );
   }
 
+  const filteredTeams = teams
+    .filter(team => {
+      const matchesSearch = team.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSport = selectedSport === 'all' || team.sport === selectedSport;
+      return matchesSearch && matchesSport;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'points':
+          return b.points - a.points;
+        case 'rating':
+          return b.rating - a.rating;
+        case 'wins':
+          return b.wins - a.wins;
+        case 'name':
+          return a.name.localeCompare(b.name);
+        default:
+          return 0;
+      }
+    });
+
   return (
     <div className="p-4 space-y-6">
       {/* Header */}
       <div className="text-center py-6 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl text-white">
-        <h1 className="text-2xl font-bold mb-2">🏆 Team Profiles</h1>
+        <h1 className="text-2xl font-bold mb-2">Team Profiles</h1>
         <p className="text-purple-100">Explore team stats and rosters</p>
+        <div className="mt-3 text-sm opacity-90">{filteredTeams.length} teams</div>
+      </div>
+
+      {/* Search Bar */}
+      <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+          <input
+            type="text"
+            placeholder="Search teams by name..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-10 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              <X size={18} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 space-y-4">
+        <div>
+          <div className="flex items-center space-x-2 mb-2">
+            <Filter size={16} className="text-gray-500" />
+            <span className="text-sm font-semibold text-gray-700">Filter by Sport</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {sports.map((sport) => (
+              <button
+                key={sport}
+                onClick={() => setSelectedSport(sport)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  selectedSport === sport
+                    ? 'bg-blue-100 text-blue-700 border-2 border-blue-300'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border-2 border-transparent'
+                }`}
+              >
+                {sport.charAt(0).toUpperCase() + sport.slice(1)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <div className="flex items-center space-x-2 mb-2">
+            <TrendingUp size={16} className="text-gray-500" />
+            <span className="text-sm font-semibold text-gray-700">Sort By</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { value: 'points', label: 'Points' },
+              { value: 'rating', label: 'Rating' },
+              { value: 'wins', label: 'Wins' },
+              { value: 'name', label: 'Name' }
+            ].map(({ value, label }) => (
+              <button
+                key={value}
+                onClick={() => setSortBy(value as any)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  sortBy === value
+                    ? 'bg-green-100 text-green-700 border-2 border-green-300'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border-2 border-transparent'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Teams Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {teams.map((team) => (
+      {filteredTeams.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {filteredTeams.map((team) => (
           <div
             key={team.id}
             onClick={() => setSelectedTeam(team)}
@@ -230,7 +332,14 @@ export const TeamProfiles: React.FC<TeamProfilesProps> = ({ teams, matches }) =>
             </div>
           </div>
         ))}
-      </div>
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl p-8 text-center border border-gray-200">
+          <Users size={32} className="mx-auto mb-3 text-gray-400" />
+          <h3 className="font-bold text-gray-600 mb-2">No Teams Found</h3>
+          <p className="text-gray-500">Try adjusting your search or filters</p>
+        </div>
+      )}
     </div>
   );
 };
